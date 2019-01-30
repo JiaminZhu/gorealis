@@ -48,7 +48,7 @@ type Realis interface {
 	FetchTaskConfig(instKey aurora.InstanceKey) (*aurora.TaskConfig, error)
 	GetInstanceIds(key *aurora.JobKey, states map[aurora.ScheduleStatus]bool) (map[int32]bool, error)
 	GetJobUpdateSummaries(jobUpdateQuery *aurora.JobUpdateQuery) (*aurora.Response, error)
-	GetTaskStatus(query *aurora.TaskQuery) ([]*aurora.ScheduledTask, error)
+	GetTaskStatus(query *aurora.TaskQuery) (*aurora.Response, error)
 	GetTasksWithoutConfigs(query *aurora.TaskQuery) ([]*aurora.ScheduledTask, error)
 	GetJobs(role string) (*aurora.Response, *aurora.GetJobsResult_, error)
 	GetPendingReason(query *aurora.TaskQuery) (pendingReasons []*aurora.PendingReason, e error)
@@ -884,9 +884,9 @@ func (r *realisClient) RemoveInstances(key *aurora.JobKey, count int32) (*aurora
 }
 
 // Get information about task including a fully hydrated task configuration object
-func (r *realisClient) GetTaskStatus(query *aurora.TaskQuery) (tasks []*aurora.ScheduledTask, e error) {
+func (r *realisClient) GetTaskStatus(query *aurora.TaskQuery) (*aurora.Response, error) {
 
-	r.logger.DebugPrintf("GetTasksStatus Thrift Payload: %+v\n", query)
+	r.logger.DebugPrintf("GetTasksStatus Thrift Payload: %+v", query)
 
 	resp, retryErr := r.thriftCallWithRetries(func() (*aurora.Response, error) {
 		return r.client.GetTasksStatus(query)
@@ -896,8 +896,9 @@ func (r *realisClient) GetTaskStatus(query *aurora.TaskQuery) (tasks []*aurora.S
 		return nil, errors.Wrap(retryErr, "Error querying Aurora Scheduler for task status")
 	}
 
-	return response.ScheduleStatusResult(resp).GetTasks(), nil
+	return resp, nil
 }
+
 
 // Get pending reason
 func (r *realisClient) GetPendingReason(query *aurora.TaskQuery) (pendingReasons []*aurora.PendingReason, e error) {
